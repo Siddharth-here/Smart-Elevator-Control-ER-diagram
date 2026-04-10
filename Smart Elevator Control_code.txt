@@ -1,0 +1,94 @@
+building [icon: building, color: orange]{
+  id SERIEL pk
+  name VARCHAR(50) not null
+  city VARCHAR(30) not null
+  total_floors VARCHAR(60) not null
+  status
+}
+floor [icon: layers, color: green] {
+  id SERIAL pk
+  building_id INT fk 
+  floor_number INT not null
+  label VARCHAR(20) 
+  is_active BOOLEAN default true
+}
+elevator_shaft [color: grey] {
+  id SERIAL pk
+  building_id INT fk 
+  shaft_label VARCHAR(30) // e.g., 'North Wing Shaft A'
+  physical_location VARCHAR(100)
+}
+elevator [icon: elevator, color: red]{
+  id SERIAL pk
+  shaft_id INT fk 
+  current_floor_id INT fk 
+  current_status VARCHAR(20) // 'idle', 'moving', 'maintenance'
+  capacity_kg INT
+  maintenance_due DATE
+}
+elevator_floor_coverage [icon: sync, color: yellow] {
+elevator_id INT fk
+floor_id INT fk
+primary_key (elevator_id, floor_id)
+}
+
+floor_request [icon: touch_app, color: blue] {
+id SERIAL pk
+floor_id INT fk
+building_id INT fk
+direction VARCHAR(10) // 'up', 'down'
+timestamp TIMESTAMP
+is_fulfilled BOOLEAN default false
+}
+
+ride_assignment [icon: assignment_turned_in, color: purple] {
+id SERIAL pk
+request_id INT fk // unique assignment per request
+elevator_id INT fk
+assigned_timestamp TIMESTAMP
+}
+
+ride_log [icon: history, color: cyan] {
+id SERIAL pk
+elevator_id INT fk
+start_floor_id INT fk
+end_floor_id INT fk
+start_time TIMESTAMP
+end_time TIMESTAMP
+duration_seconds INT
+}
+
+maintenance_log [icon: build, color: brown] {
+id SERIAL pk
+elevator_id INT fk
+start_datetime TIMESTAMP
+end_datetime TIMESTAMP
+technician_name VARCHAR(50)
+maintenance_type VARCHAR(30)
+status VARCHAR(20) // 'completed', 'scheduled'
+notes TEXT
+}
+
+
+ building.id < floor.building_id
+ building.id < elevator_shaft.building_id
+ elevator_shaft.id - elevator.shaft_id // 1:1 - One elevator per shaft
+
+
+ elevator.id < elevator_floor_coverage.elevator_id
+ floor.id < elevator_floor_coverage.floor_id
+
+
+ floor.id < floor_request.floor_id
+ building.id < floor_request.building_id
+ floor_request.id - ride_assignment.request_id // 1:1 - One assignment per request
+ elevator.id < ride_assignment.elevator_id
+
+
+ floor.id < elevator.current_floor_id // Tracks where the lift is now
+
+
+ elevator.id < ride_log.elevator_id
+ floor.id < ride_log.start_floor_id
+ floor.id < ride_log.end_floor_id
+ elevator.id < maintenance_log.elevator_id
